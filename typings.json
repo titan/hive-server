@@ -1,0 +1,7 @@
+{
+  "globalDependencies": {
+    "msgpack-lite": "http://git.fengchaohuzhu.com:10080/Titan/typescript.d.ts/raw/master/msgpack-lite.d.ts",
+    "nanomsg": "http://git.fengchaohuzhu.com:10080/Titan/typescript.d.ts/raw/master/nanomsg.d.ts",
+    "node": "registry:dt/node#6.0.0+20160807145350"
+  }
+}
