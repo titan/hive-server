@@ -6,7 +6,8 @@
     "noImplicitAny": false,
     "sourceMap": false,
     "outDir": "./",
-    "rootDir": "./src/"
+    "rootDir": "./src/",
+    "declaration": true
   },
   "exclude": [
     "node_modules"

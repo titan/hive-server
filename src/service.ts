@@ -15,12 +15,12 @@ export interface Context {
 
 export type Permission = [string, boolean];
 
-export interface CallbackFunction {
+export interface ResponseFunction {
   (result: any): void;
 }
 
 export interface ModuleFunction {
-  (ctx: Context, cb: CallbackFunction, ...rest: any[]): void;
+  (ctx: Context, rep: ResponseFunction, ...rest: any[]): void;
 }
 
 export class Service {
