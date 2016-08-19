@@ -17,8 +17,9 @@ class Service {
         rep.bind(this.config.svraddr);
         let mq = null;
         if (this.config.msgaddr) {
-            if (fs.existsSync(this.config.msgaddr)) {
-                fs.unlinkSync(this.config.msgaddr);
+            let path = this.config.msgaddr.substring(this.config.msgaddr.indexOf('///') + 2, this.config.msgaddr.length);
+            if (fs.existsSync(path)) {
+                fs.unlinkSync(path);
             }
             mq = nano.socket('push');
             mq.bind(this.config.msgaddr);
