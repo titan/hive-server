@@ -1,5 +1,6 @@
 import * as msgpack from 'msgpack-lite';
 import * as nano from 'nanomsg';
+import * as fs from 'fs';
 
 export interface Config {
   svraddr: string,
@@ -42,7 +43,15 @@ export class Service {
   public run(): void {
     let rep = nano.socket('rep');
     rep.bind(this.config.svraddr);
-    let mq = this.config.msgaddr? nano.socket('push'): null;
+    let mq = null;
+    if (this.config.msgaddr) {
+      if (fs.existsSync(this.config.msgaddr)) {
+        fs.unlinkSync(this.config.msgaddr); // make nanomsg happy
+      }
+      mq = nano.socket('push');
+      mq.bind(this.config.msgaddr);
+    }
+    this.config.msgaddr? nano.socket('push'): null;
     let _self = this;
     rep.on('data', function (buf: NodeBuffer) {
       let pkt = msgpack.decode(buf);

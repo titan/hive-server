@@ -1,6 +1,7 @@
 "use strict";
 const msgpack = require('msgpack-lite');
 const nano = require('nanomsg');
+const fs = require('fs');
 class Service {
     constructor(config) {
         this.config = config;
@@ -14,7 +15,15 @@ class Service {
     run() {
         let rep = nano.socket('rep');
         rep.bind(this.config.svraddr);
-        let mq = this.config.msgaddr ? nano.socket('push') : null;
+        let mq = null;
+        if (this.config.msgaddr) {
+            if (fs.existsSync(this.config.msgaddr)) {
+                fs.unlinkSync(this.config.msgaddr);
+            }
+            mq = nano.socket('push');
+            mq.bind(this.config.msgaddr);
+        }
+        this.config.msgaddr ? nano.socket('push') : null;
         let _self = this;
         rep.on('data', function (buf) {
             let pkt = msgpack.decode(buf);
