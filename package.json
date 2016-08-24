@@ -2,7 +2,7 @@
   "name": "hive-service",
   "version": "1.0.0",
   "description": "",
-  "main": "service.js",
+  "main": "server.js",
   "scripts": {
   },
   "keywords": [],
