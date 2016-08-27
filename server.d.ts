@@ -16,7 +16,7 @@ export interface ResponseFunction {
 export interface ModuleFunction {
     (ctx: Context, rep: ResponseFunction, ...rest: any[]): void;
 }
-export declare class Service {
+export declare class Server {
     functions: Map<string, ModuleFunction>;
     permissions: Map<string, Map<string, boolean>>;
     config: Config;
@@ -24,3 +24,4 @@ export declare class Service {
     call(fun: string, permissions: Permission[], impl: ModuleFunction): void;
     run(): void;
 }
+export declare function rpc(domain: string, addr: string, uid: string, fun: string, ...args: any[]): Promise<any>;

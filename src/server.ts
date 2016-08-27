@@ -1,6 +1,7 @@
 import * as msgpack from 'msgpack-lite';
 import * as nano from 'nanomsg';
 import * as fs from 'fs';
+import * as ip from 'ip';
 
 export interface Config {
   svraddr: string,
@@ -24,7 +25,7 @@ export interface ModuleFunction {
   (ctx: Context, rep: ResponseFunction, ...rest: any[]): void;
 }
 
-export class Service {
+export class Server {
   functions: Map<string, ModuleFunction>;
   permissions: Map<string, Map<string, boolean>>; // {function => { domain => permission }}
   config: Config;
@@ -70,4 +71,27 @@ export class Service {
       }
     });
   }
+}
+
+export function rpc(domain: string, addr: string, uid: string, fun: string, ...args: any[]): Promise<any> {
+  let p = new Promise(function (resolve, reject) {
+    let params = {
+      ctx: {
+        domain: domain,
+        ip:     ip.address(),
+        uid:    uid
+      },
+      fun: fun,
+      args: [...args]
+    };
+    let req = nano.socket('req');
+    req.connect(addr);
+
+    req.on('data', (msg) => {
+      resolve(msgpack.decode(msg));
+      req.shutdown(addr);
+    });
+    req.send(msgpack.encode(params));
+  });
+  return p;
 }

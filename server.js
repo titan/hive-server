@@ -2,7 +2,8 @@
 const msgpack = require('msgpack-lite');
 const nano = require('nanomsg');
 const fs = require('fs');
-class Service {
+const ip = require('ip');
+class Server {
     constructor(config) {
         this.config = config;
         this.functions = new Map();
@@ -44,4 +45,26 @@ class Service {
         });
     }
 }
-exports.Service = Service;
+exports.Server = Server;
+function rpc(domain, addr, uid, fun, ...args) {
+    let p = new Promise(function (resolve, reject) {
+        let params = {
+            ctx: {
+                domain: domain,
+                ip: ip.address(),
+                uid: uid
+            },
+            fun: fun,
+            args: [...args]
+        };
+        let req = nano.socket('req');
+        req.connect(addr);
+        req.on('data', (msg) => {
+            resolve(msgpack.decode(msg));
+            req.shutdown(addr);
+        });
+        req.send(msgpack.encode(params));
+    });
+    return p;
+}
+exports.rpc = rpc;
