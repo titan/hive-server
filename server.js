@@ -37,7 +37,7 @@ class Server {
                 let func = _self.functions.get(fun);
                 func(ctx, function (result) {
                     rep.send(msgpack.encode(result));
-                }, args);
+                }, ...args);
             }
             else {
                 rep.send(msgpack.encode({ code: 403, msg: "Forbidden" }));
