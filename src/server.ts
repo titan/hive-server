@@ -53,7 +53,6 @@ export class Server {
       mq = nano.socket('push');
       mq.bind(this.config.msgaddr);
     }
-    this.config.msgaddr? nano.socket('push'): null;
     let _self = this;
     rep.on('data', function (buf: NodeBuffer) {
       let pkt = msgpack.decode(buf);
@@ -63,9 +62,15 @@ export class Server {
       let args = pkt.args;
       if (_self.permissions.has(fun) && _self.permissions.get(fun).get(ctx.domain)) {
         let func: ModuleFunction = _self.functions.get(fun);
-        func(ctx, function(result) {
-          rep.send(msgpack.encode(result));
-        }, ...args);
+        if (args != null) {
+          func(ctx, function(result) {
+            rep.send(msgpack.encode(result));
+          }, ...args);
+        } else {
+          func(ctx, function(result) {
+            rep.send(msgpack.encode(result));
+          });
+        }
       } else {
         rep.send(msgpack.encode({code: 403, msg: "Forbidden"}));
       }
@@ -75,6 +80,10 @@ export class Server {
 
 export function rpc(domain: string, addr: string, uid: string, fun: string, ...args: any[]): Promise<any> {
   let p = new Promise(function (resolve, reject) {
+    let a = [];
+    if (args != null) {
+      a = [...args];
+    }
     let params = {
       ctx: {
         domain: domain,
@@ -82,7 +91,7 @@ export function rpc(domain: string, addr: string, uid: string, fun: string, ...a
         uid:    uid
       },
       fun: fun,
-      args: [...args]
+      args: a
     };
     let req = nano.socket('req');
     req.connect(addr);
