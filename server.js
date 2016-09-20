@@ -1,9 +1,9 @@
 "use strict";
-const msgpack = require('msgpack-lite');
-const nano = require('nanomsg');
-const fs = require('fs');
-const ip = require('ip');
-const redis_1 = require('redis');
+const msgpack = require("msgpack-lite");
+const nano = require("nanomsg");
+const fs = require("fs");
+const ip = require("ip");
+const redis_1 = require("redis");
 class Server {
     constructor(config) {
         this.config = config;
@@ -15,24 +15,24 @@ class Server {
         this.permissions.set(fun, new Map(permissions));
     }
     run() {
-        let rep = nano.socket('rep');
+        let rep = nano.socket("rep");
         rep.bind(this.config.svraddr);
         let mq = null;
         if (this.config.msgaddr) {
-            let path = this.config.msgaddr.substring(this.config.msgaddr.indexOf('///') + 2, this.config.msgaddr.length);
+            let path = this.config.msgaddr.substring(this.config.msgaddr.indexOf("///") + 2, this.config.msgaddr.length);
             if (fs.existsSync(path)) {
                 fs.unlinkSync(path);
             }
-            mq = nano.socket('push');
+            mq = nano.socket("push");
             mq.bind(this.config.msgaddr);
         }
         let cache = null;
         if (this.config.cacheaddr) {
             cache = redis_1.createClient(6379, this.config.cacheaddr);
         }
-        this.config.msgaddr ? nano.socket('push') : null;
+        this.config.msgaddr ? nano.socket("push") : null;
         let _self = this;
-        rep.on('data', function (buf) {
+        rep.on("data", function (buf) {
             let pkt = msgpack.decode(buf);
             let ctx = pkt.ctx;
             ctx.msgqueue = mq ? mq : null;
@@ -74,9 +74,9 @@ function rpc(domain, addr, uid, fun, ...args) {
             fun: fun,
             args: a
         };
-        let req = nano.socket('req');
+        let req = nano.socket("req");
         req.connect(addr);
-        req.on('data', (msg) => {
+        req.on("data", (msg) => {
             resolve(msgpack.decode(msg));
             req.shutdown(addr);
         });

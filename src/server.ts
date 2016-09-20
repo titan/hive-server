@@ -1,21 +1,21 @@
-import * as msgpack from 'msgpack-lite';
-import * as nano from 'nanomsg';
-import * as fs from 'fs';
-import * as ip from 'ip';
-import { createClient, RedisClient } from 'redis';
+import * as msgpack from "msgpack-lite";
+import * as nano from "nanomsg";
+import * as fs from "fs";
+import * as ip from "ip";
+import { createClient, RedisClient } from "redis";
 
 export interface Config {
-  svraddr: string,
-  msgaddr?: string,
-  cacheaddr?: string
+  svraddr: string;
+  msgaddr?: string;
+  cacheaddr?: string;
 }
 
 export interface Context {
-  domain: string,
-  ip: string,
-  uid: string,
-  msgqueue?: nano.Socket,
-  cache?: RedisClient
+  domain: string;
+  ip: string;
+  uid: string;
+  msgqueue?: nano.Socket;
+  cache?: RedisClient;
 }
 
 export type Permission = [string, boolean];
@@ -45,28 +45,28 @@ export class Server {
   }
 
   public run(): void {
-    let rep = nano.socket('rep');
+    let rep = nano.socket("rep");
     rep.bind(this.config.svraddr);
     let mq = null;
     if (this.config.msgaddr) {
-      let path = this.config.msgaddr.substring(this.config.msgaddr.indexOf('///') + 2, this.config.msgaddr.length);
+      let path = this.config.msgaddr.substring(this.config.msgaddr.indexOf("///") + 2, this.config.msgaddr.length);
       if (fs.existsSync(path)) {
         fs.unlinkSync(path); // make nanomsg happy
       }
-      mq = nano.socket('push');
+      mq = nano.socket("push");
       mq.bind(this.config.msgaddr);
     }
     let cache = null;
     if (this.config.cacheaddr) {
       cache = createClient(6379, this.config.cacheaddr);
     }
-    this.config.msgaddr? nano.socket('push'): null;
+    this.config.msgaddr ? nano.socket("push") : null;
     let _self = this;
-    rep.on('data', function (buf: NodeBuffer) {
+    rep.on("data", function (buf: NodeBuffer) {
       let pkt = msgpack.decode(buf);
       let ctx: Context = pkt.ctx; /* Domain, IP, User */
-      ctx.msgqueue = mq? mq: null;
-      ctx.cache = cache? cache: null;
+      ctx.msgqueue = mq ? mq : null;
+      ctx.cache = cache ? cache : null;
       let fun = pkt.fun;
       let args = pkt.args;
       if (_self.permissions.has(fun) && _self.permissions.get(fun).get(ctx.domain)) {
@@ -102,10 +102,10 @@ export function rpc(domain: string, addr: string, uid: string, fun: string, ...a
       fun: fun,
       args: a
     };
-    let req = nano.socket('req');
+    let req = nano.socket("req");
     req.connect(addr);
 
-    req.on('data', (msg) => {
+    req.on("data", (msg) => {
       resolve(msgpack.decode(msg));
       req.shutdown(addr);
     });

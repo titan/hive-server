@@ -1,5 +1,5 @@
-import * as nano from 'nanomsg';
-import { RedisClient } from 'redis';
+import * as nano from "nanomsg";
+import { RedisClient } from "redis";
 export interface Config {
     svraddr: string;
     msgaddr?: string;
