@@ -87,8 +87,8 @@ export class Server {
   }
 }
 
-export function rpc(domain: string, addr: string, uid: string, fun: string, ...args: any[]): Promise<any> {
-  let p = new Promise(function (resolve, reject) {
+export function rpc<T>(domain: string, addr: string, uid: string, fun: string, ...args: any[]): Promise<T> {
+  let p = new Promise<T>(function (resolve, reject) {
     let a = [];
     if (args != null) {
       a = [...args];
