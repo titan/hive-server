@@ -102,6 +102,6 @@ function wait_for_response(cache, reply, rep) {
                 clearInterval(timer);
             }
         });
-    }, 3);
+    }, 3000);
 }
 exports.wait_for_response = wait_for_response;

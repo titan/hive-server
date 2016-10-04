@@ -27,5 +27,5 @@ export declare class Server {
     call(fun: string, permissions: Permission[], impl: ModuleFunction): void;
     run(): void;
 }
-export declare function rpc(domain: string, addr: string, uid: string, fun: string, ...args: any[]): Promise<any>;
+export declare function rpc<T>(domain: string, addr: string, uid: string, fun: string, ...args: any[]): Promise<T>;
 export declare function wait_for_response(cache: RedisClient, reply: string, rep: ResponseFunction): void;

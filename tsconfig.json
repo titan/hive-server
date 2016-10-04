@@ -5,9 +5,9 @@
     "removeComments": true,
     "noImplicitAny": false,
     "sourceMap": false,
-    "outDir": "./",
-    "rootDir": "./src/",
-    "declaration": true
+    "declaration": true,
+    "outDir": "./dist/",
+    "rootDir": "./src/"
   },
   "exclude": [
     "node_modules"

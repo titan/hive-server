@@ -130,5 +130,5 @@ export function wait_for_response(cache: RedisClient, reply: string, rep: Respon
         clearInterval(timer);
       }
     });
-  }, 3);
+  }, 3000);
 }
