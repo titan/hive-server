@@ -1,4 +1,5 @@
 import * as msgpack from "msgpack-lite";
+import * as crypto from "crypto";
 import * as nano from "nanomsg";
 import * as fs from "fs";
 import * as ip from "ip";
@@ -63,7 +64,9 @@ export class Server {
     }
     let _self = this;
     rep.on("data", function (buf: NodeBuffer) {
-      let pkt = msgpack.decode(buf);
+      let data = msgpack.decode(buf);
+      let pkt = data.pkt;
+      let sn = data.sn;
       let ctx: Context = pkt.ctx; /* Domain, IP, User */
       ctx.msgqueue = mq ? mq : null;
       ctx.cache = cache ? cache : null;
@@ -73,15 +76,18 @@ export class Server {
         let func: ModuleFunction = _self.functions.get(fun);
         if (args != null) {
           func(ctx, function(result) {
-            rep.send(msgpack.encode(result));
+            const payload = msgpack.encode(result);
+            rep.send(msgpack.encode({ sn, payload }));
           }, ...args);
         } else {
           func(ctx, function(result) {
-            rep.send(msgpack.encode(result));
+            const payload = msgpack.encode(result);
+            rep.send(msgpack.encode({ sn, payload }));
           });
         }
       } else {
-        rep.send(msgpack.encode({code: 403, msg: "Forbidden"}));
+        const payload = msgpack.encode({code: 403, msg: "Forbidden"});
+        rep.send(msgpack.encode({ sn, payload }));
       }
     });
   }
@@ -102,14 +108,19 @@ export function rpc<T>(domain: string, addr: string, uid: string, fun: string, .
       fun: fun,
       args: a
     };
+    const sn = crypto.randomBytes(64).toString("base64");
     let req = nano.socket("req");
     req.connect(addr);
-
     req.on("data", (msg) => {
-      resolve(msgpack.decode(msg));
+      const data: Object = msgpack.decode(msg);
+      if (sn === data["sn"]) {
+        resolve(data["payload"]);
+      } else {
+        reject(new Error("Invalid calling sequence number"));
+      }
       req.shutdown(addr);
     });
-    req.send(msgpack.encode(params));
+    req.send(msgpack.encode({ sn, payload: msgpack.encode(params)}));
   });
   return p;
 }
