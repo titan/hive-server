@@ -60,7 +60,6 @@ export class Server {
     if (this.config.cacheaddr) {
       cache = createClient(6379, this.config.cacheaddr);
     }
-    this.config.msgaddr ? nano.socket("push") : null;
     let _self = this;
     rep.on("data", function (buf: NodeBuffer) {
       let pkt = msgpack.decode(buf);
