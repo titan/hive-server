@@ -84,23 +84,36 @@ function rpc(domain, addr, uid, fun, ...args) {
     return p;
 }
 exports.rpc = rpc;
+function fib_iter(a, b, p, q, n) {
+    if (n === 0) {
+        return b;
+    }
+    if (n % 2 === 0) {
+        return fib_iter(a, b, p * p + q * q, 2 * p * q + q * q, n / 2);
+    }
+    return fib_iter(a * p + a * q + b * q, b * p + a * q, p, q, n - 1);
+}
+function fib(n) {
+    return fib_iter(1, 0, 0, 1, n);
+}
+exports.fib = fib;
+function timer_callback(cache, reply, rep, countdown) {
+    cache.get(reply, (err, result) => {
+        if (result) {
+            rep(JSON.parse(result));
+        }
+        else if (countdown === 0) {
+            rep({
+                code: 408,
+                msg: "Request Timeout"
+            });
+        }
+        else {
+            setTimeout(timer_callback, fib(8 - countdown) * 1000, cache, reply, rep, countdown - 1);
+        }
+    });
+}
 function wait_for_response(cache, reply, rep) {
-    let countdown = 10;
-    let timer = setInterval(() => {
-        cache.get(reply, (err, result) => {
-            countdown--;
-            if (result) {
-                rep(JSON.parse(result));
-                clearInterval(timer);
-            }
-            else if (countdown === 0) {
-                rep({
-                    code: 408,
-                    msg: "Request Timeout"
-                });
-                clearInterval(timer);
-            }
-        });
-    }, 3000);
+    setTimeout(timer_callback, 500, cache, reply, rep, 7);
 }
 exports.wait_for_response = wait_for_response;
