@@ -4,6 +4,7 @@ export interface Config {
     svraddr: string;
     msgaddr?: string;
     cacheaddr?: string;
+    cacheport?: number;
 }
 export interface Context {
     domain: string;

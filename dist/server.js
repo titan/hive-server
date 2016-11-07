@@ -28,7 +28,7 @@ class Server {
         }
         let cache = null;
         if (this.config.cacheaddr) {
-            cache = redis_1.createClient(6379, this.config.cacheaddr);
+            cache = redis_1.createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr);
         }
         let _self = this;
         rep.on("data", function (buf) {
