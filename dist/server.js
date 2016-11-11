@@ -1,5 +1,6 @@
 "use strict";
 const msgpack = require("msgpack-lite");
+const crypto = require("crypto");
 const nano = require("nanomsg");
 const fs = require("fs");
 const ip = require("ip");
@@ -32,7 +33,9 @@ class Server {
         }
         let _self = this;
         rep.on("data", function (buf) {
-            let pkt = msgpack.decode(buf);
+            let data = msgpack.decode(buf);
+            let pkt = data.pkt;
+            let sn = data.sn;
             let ctx = pkt.ctx;
             ctx.msgqueue = mq ? mq : null;
             ctx.cache = cache ? cache : null;
@@ -42,17 +45,20 @@ class Server {
                 let func = _self.functions.get(fun);
                 if (args != null) {
                     func(ctx, function (result) {
-                        rep.send(msgpack.encode(result));
+                        const payload = msgpack.encode(result);
+                        rep.send(msgpack.encode({ sn, payload }));
                     }, ...args);
                 }
                 else {
                     func(ctx, function (result) {
-                        rep.send(msgpack.encode(result));
+                        const payload = msgpack.encode(result);
+                        rep.send(msgpack.encode({ sn, payload }));
                     });
                 }
             }
             else {
-                rep.send(msgpack.encode({ code: 403, msg: "Forbidden" }));
+                const payload = msgpack.encode({ code: 403, msg: "Forbidden" });
+                rep.send(msgpack.encode({ sn, payload }));
             }
         });
     }
@@ -73,13 +79,20 @@ function rpc(domain, addr, uid, fun, ...args) {
             fun: fun,
             args: a
         };
+        const sn = crypto.randomBytes(64).toString("base64");
         let req = nano.socket("req");
         req.connect(addr);
         req.on("data", (msg) => {
-            resolve(msgpack.decode(msg));
+            const data = msgpack.decode(msg);
+            if (sn === data["sn"]) {
+                resolve(msgpack.decode(data["payload"]));
+            }
+            else {
+                reject(new Error("Invalid calling sequence number"));
+            }
             req.shutdown(addr);
         });
-        req.send(msgpack.encode(params));
+        req.send(msgpack.encode({ sn, pkt: params }));
     });
     return p;
 }
