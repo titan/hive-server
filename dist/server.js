@@ -16,8 +16,6 @@ class Server {
         this.permissions.set(fun, new Map(permissions));
     }
     run() {
-        let rep = nano.socket("rep");
-        rep.bind(this.config.svraddr);
         let mq = null;
         if (this.config.msgaddr) {
             let path = this.config.msgaddr.substring(this.config.msgaddr.indexOf("///") + 2, this.config.msgaddr.length);
@@ -32,35 +30,43 @@ class Server {
             cache = redis_1.createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr);
         }
         let _self = this;
-        rep.on("data", function (buf) {
-            let data = msgpack.decode(buf);
-            let pkt = data.pkt;
-            let sn = data.sn;
-            let ctx = pkt.ctx;
-            ctx.msgqueue = mq ? mq : null;
-            ctx.cache = cache ? cache : null;
-            let fun = pkt.fun;
-            let args = pkt.args;
-            if (_self.permissions.has(fun) && _self.permissions.get(fun).get(ctx.domain)) {
-                let func = _self.functions.get(fun);
-                if (args != null) {
-                    func(ctx, function (result) {
-                        const payload = msgpack.encode(result);
-                        rep.send(msgpack.encode({ sn, payload }));
-                    }, ...args);
+        let pair = nano.socket("pair");
+        pair.bind(this.config.svraddr);
+        let rep = nano.socket("rep");
+        const lastnumber = parseInt(this.config.svraddr[this.config.svraddr.length - 1]) + 1;
+        const newaddr = this.config.svraddr.substr(0, this.config.svraddr.length - 1) + lastnumber.toString();
+        rep.bind(newaddr);
+        for (const sock of [pair, rep]) {
+            sock.on("data", function (buf) {
+                let data = msgpack.decode(buf);
+                let pkt = data.pkt;
+                let sn = data.sn;
+                let ctx = pkt.ctx;
+                ctx.msgqueue = mq ? mq : null;
+                ctx.cache = cache ? cache : null;
+                let fun = pkt.fun;
+                let args = pkt.args;
+                if (_self.permissions.has(fun) && _self.permissions.get(fun).get(ctx.domain)) {
+                    let func = _self.functions.get(fun);
+                    if (args != null) {
+                        func(ctx, function (result) {
+                            const payload = msgpack.encode(result);
+                            sock.send(msgpack.encode({ sn, payload }));
+                        }, ...args);
+                    }
+                    else {
+                        func(ctx, function (result) {
+                            const payload = msgpack.encode(result);
+                            sock.send(msgpack.encode({ sn, payload }));
+                        });
+                    }
                 }
                 else {
-                    func(ctx, function (result) {
-                        const payload = msgpack.encode(result);
-                        rep.send(msgpack.encode({ sn, payload }));
-                    });
+                    const payload = msgpack.encode({ code: 403, msg: "Forbidden" });
+                    sock.send(msgpack.encode({ sn, payload }));
                 }
-            }
-            else {
-                const payload = msgpack.encode({ code: 403, msg: "Forbidden" });
-                rep.send(msgpack.encode({ sn, payload }));
-            }
-        });
+            });
+        }
     }
 }
 exports.Server = Server;
@@ -81,7 +87,9 @@ function rpc(domain, addr, uid, fun, ...args) {
         };
         const sn = crypto.randomBytes(64).toString("base64");
         let req = nano.socket("req");
-        req.connect(addr);
+        const lastnumber = parseInt(addr[addr.length - 1]) + 1;
+        const newaddr = addr.substr(0, addr.length - 1) + lastnumber.toString();
+        req.connect(newaddr);
         req.on("data", (msg) => {
             const data = msgpack.decode(msg);
             if (sn === data["sn"]) {
