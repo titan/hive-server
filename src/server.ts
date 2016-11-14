@@ -116,9 +116,7 @@ export function rpc<T>(domain: string, addr: string, uid: string, fun: string, .
     };
     const sn = crypto.randomBytes(64).toString("base64");
     let req = nano.socket("req");
-    const lastnumber = parseInt(addr[addr.length - 1]) + 1;
-    const newaddr = addr.substr(0, addr.length - 1) + lastnumber.toString();
-    req.connect(newaddr);
+    req.connect(addr);
     req.on("data", (msg) => {
       const data: Object = msgpack.decode(msg);
       if (sn === data["sn"]) {
