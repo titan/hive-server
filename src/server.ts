@@ -61,12 +61,12 @@ export class Server {
       cache = createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr);
     }
     let _self = this;
-    let pair = nano.socket("pair");
-    pair.bind(this.config.svraddr);
     let rep = nano.socket("rep");
     const lastnumber = parseInt(this.config.svraddr[this.config.svraddr.length - 1]) + 1;
     const newaddr = this.config.svraddr.substr(0, this.config.svraddr.length - 1) + lastnumber.toString();
-    rep.bind(newaddr);
+    rep.bind(this.config.svraddr);
+    let pair = nano.socket("pair");
+    pair.bind(newaddr);
     for (const sock of [pair, rep]) {
       sock.on("data", function (buf: NodeBuffer) {
         let data = msgpack.decode(buf);
