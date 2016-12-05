@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const nano = require("nanomsg");
 const fs = require("fs");
 const ip = require("ip");
+const bluebird = require("bluebird");
 const redis_1 = require("redis");
 class Server {
     constructor(config) {
@@ -27,13 +28,13 @@ class Server {
         }
         let cache = null;
         if (this.config.cacheaddr) {
-            cache = redis_1.createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr);
+            cache = bluebird.promisifyAll(redis_1.createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr));
         }
         let _self = this;
         let rep = nano.socket("rep");
+        rep.bind(this.config.svraddr);
         const lastnumber = parseInt(this.config.svraddr[this.config.svraddr.length - 1]) + 1;
         const newaddr = this.config.svraddr.substr(0, this.config.svraddr.length - 1) + lastnumber.toString();
-        rep.bind(this.config.svraddr);
         let pair = nano.socket("pair");
         pair.bind(newaddr);
         for (const sock of [pair, rep]) {

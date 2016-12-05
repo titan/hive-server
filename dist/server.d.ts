@@ -1,3 +1,4 @@
+/// <reference types="nanomsg" />
 import * as nano from "nanomsg";
 import { RedisClient } from "redis";
 export interface Config {

@@ -3,6 +3,7 @@ import * as crypto from "crypto";
 import * as nano from "nanomsg";
 import * as fs from "fs";
 import * as ip from "ip";
+import * as bluebird from "bluebird";
 import { createClient, RedisClient } from "redis";
 
 export interface Config {
@@ -58,13 +59,13 @@ export class Server {
     }
     let cache = null;
     if (this.config.cacheaddr) {
-      cache = createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr);
+      cache = bluebird.promisifyAll(createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr));
     }
     let _self = this;
     let rep = nano.socket("rep");
+    rep.bind(this.config.svraddr);
     const lastnumber = parseInt(this.config.svraddr[this.config.svraddr.length - 1]) + 1;
     const newaddr = this.config.svraddr.substr(0, this.config.svraddr.length - 1) + lastnumber.toString();
-    rep.bind(this.config.svraddr);
     let pair = nano.socket("pair");
     pair.bind(newaddr);
     for (const sock of [pair, rep]) {
