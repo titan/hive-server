@@ -29,7 +29,7 @@ class Server {
         }
         let cache = null;
         if (this.config.cacheaddr) {
-            cache = bluebird.promisifyAll(redis_1.createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr));
+            cache = bluebird.promisifyAll(redis_1.createClient(this.config.cacheport ? this.config.cacheport : (process.env["CACHE_PORT"] ? parseInt(process.env["CACHE_PORT"]) : 6379), this.config.cacheaddr, { "return_buffers": true }));
         }
         let _self = this;
         let rep = nano.socket("rep");
